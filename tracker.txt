@@ -1,0 +1,67 @@
+
+$ rails new tracker
+$ cd tracker
+$ touch tracker.txt
+$ open tracker.txt
+
+$ rails g scaffold CheckIn mile_run:integer push_ups:integer sit_ups:integer weight:integer
+
+$ rails db:migrate
+
+- in gemfile add, then save:
+
+gem 'devise'
+gem 'cancancan'
+
+~*~*~
+NOTE: devise allows secure users/login. cancancan allows you to have different levels of user with different levels of authorization.
+~*~*~
+
+$ bundle install
+
+****** Add Devise authentication
+
+$ rails g devise:install
+$ rails g devise User
+$ rails g devise:views
+$ rails db:migrate
+
+######################
+#### for tomorrow ####
+######################
+??? how can I see which attributes already belong to Users ???
+??? what about gravatar - do I need to associate to user at this level ???
+
+$ rails g migration AddUsernameToUsers username:string age:string 
+$ rails db:migrate
+
+- in app/views/devise/registrations/new.html.erb AND app/views/devise/registrations/edit.html.erb replace current username/email fields with
+#####
+    <%= f.input :username, required: true, autofocus: true %>
+    <%= f.input :email, required: true %>
+#####
+
+~*~*~
+NOTE: We just added a property to User through Devise. Just like when we add a property to a regular model, we need to add it to our params. Unlike a regular model, Devise doesn't have its own controller. We'll take care of that in our application controller. (Most of this we'd have to do even if we'd added username to begin with.)
+~*~*~
+
+- in app/controllers/application_controller.rb replace all code with
+#####
+class ApplicationController < ActionController::Base
+  before_action :configure_permitted_parameters, if: :devise_controller?
+  protect_from_forgery with: :exception
+
+  private
+  def configure_permitted_parameters
+    devise_parameter_sanitizer.permit(:sign_up, keys: [:username])
+    devise_parameter_sanitizer.permit(:account_update, keys: [:username])
+  end
+  
+end
+#####
+
+- in app/models/user.rb add
+  has_many :check_ins
+
+-in app/models/check_in.rb add
+  belongs_to :user
